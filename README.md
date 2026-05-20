@@ -51,7 +51,20 @@ cycles = 3
 ESP32-C3/C5/C6 placeholders, all three boards map `led = 8`, so the same blink
 demo produces the same GPIO8 high/low trace for each board.
 
+## Generic GPIO MMIO
+
+Boards with `[mmio.gpio] kind = "generic-gpio"` can be attached to `MmioBus`.
+The generic GPIO block is intentionally small and not register-accurate:
+
+- `base + 0x00`: write-one-to-set GPIO pins
+- `base + 0x04`: write-one-to-clear GPIO pins
+- `base + 0x08`: read GPIO output state
+
+This gives emulator-facing code a stable MMIO contract for early blink demos
+without pulling in ESP-IDF or modeling ESP32-specific GPIO registers yet.
+
 ## Next Steps
 
-- Connect the generic GPIO trace model to an emulator MMIO bus.
+- Add an emulator integration layer that routes store/load instructions through
+  `MmioBus` when addresses fall outside RAM.
 - Add board-specific register maps where accuracy matters.

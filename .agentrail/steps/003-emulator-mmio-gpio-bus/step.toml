@@ -1,6 +1,6 @@
 number = 3
 slug = "emulator-mmio-gpio-bus"
-status = "pending"
+status = "in-progress"
 description = "Connect the generic GPIO target model to emulator-facing MMIO. Define a small..."
 role = "legacy"
 context_files = []

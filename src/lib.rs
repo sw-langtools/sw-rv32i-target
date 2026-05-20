@@ -28,6 +28,10 @@ impl Board {
     pub fn supports_gpio(&self, pin: u32) -> bool {
         self.gpio.pins.contains(&pin)
     }
+
+    pub fn mmio_base(&self, name: &str) -> Option<u32> {
+        self.mmio.get(name).map(|device| device.base)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -102,6 +106,104 @@ impl GpioState {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MmioBus {
+    gpio: Option<GenericGpioMmio>,
+}
+
+impl MmioBus {
+    pub fn for_board(board: &Board) -> Result<Self, BoardError> {
+        let gpio = match board.mmio.get("gpio") {
+            Some(device) if device.kind == "generic-gpio" => Some(GenericGpioMmio::new(
+                device.base,
+                GpioState::for_board(board),
+            )),
+            Some(device) => return Err(BoardError::UnsupportedMmioKind(device.kind.clone())),
+            None => None,
+        };
+        Ok(Self { gpio })
+    }
+
+    pub fn write32(&mut self, addr: u32, value: u32) -> Result<(), BoardError> {
+        if let Some(gpio) = &mut self.gpio {
+            if gpio.contains(addr) {
+                return gpio.write32(addr, value);
+            }
+        }
+        Err(BoardError::UnknownMmioAddress(addr))
+    }
+
+    pub fn read32(&self, addr: u32) -> Result<u32, BoardError> {
+        if let Some(gpio) = &self.gpio {
+            if gpio.contains(addr) {
+                return gpio.read32(addr);
+            }
+        }
+        Err(BoardError::UnknownMmioAddress(addr))
+    }
+
+    pub fn gpio(&self) -> Option<&GpioState> {
+        self.gpio.as_ref().map(GenericGpioMmio::state)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GenericGpioMmio {
+    base: u32,
+    state: GpioState,
+}
+
+impl GenericGpioMmio {
+    pub const SET_OFFSET: u32 = 0x00;
+    pub const CLEAR_OFFSET: u32 = 0x04;
+    pub const READ_OFFSET: u32 = 0x08;
+    pub const SIZE: u32 = 0x0c;
+
+    pub fn new(base: u32, state: GpioState) -> Self {
+        Self { base, state }
+    }
+
+    pub fn contains(&self, addr: u32) -> bool {
+        addr >= self.base && addr < self.base + Self::SIZE
+    }
+
+    pub fn state(&self) -> &GpioState {
+        &self.state
+    }
+
+    pub fn write32(&mut self, addr: u32, value: u32) -> Result<(), BoardError> {
+        match addr.checked_sub(self.base) {
+            Some(Self::SET_OFFSET) => self.write_mask(value, true),
+            Some(Self::CLEAR_OFFSET) => self.write_mask(value, false),
+            _ => Err(BoardError::UnknownMmioAddress(addr)),
+        }
+    }
+
+    pub fn read32(&self, addr: u32) -> Result<u32, BoardError> {
+        match addr.checked_sub(self.base) {
+            Some(Self::READ_OFFSET) => {
+                let mut value = 0;
+                for (pin, high) in &self.state.pins {
+                    if *high && *pin < 32 {
+                        value |= 1 << pin;
+                    }
+                }
+                Ok(value)
+            }
+            _ => Err(BoardError::UnknownMmioAddress(addr)),
+        }
+    }
+
+    fn write_mask(&mut self, value: u32, high: bool) -> Result<(), BoardError> {
+        for pin in 0..32 {
+            if value & (1 << pin) != 0 && self.state.pins.contains_key(&pin) {
+                self.state.write_pin(pin, high)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct GpioTraceEvent {
     pub pin: u32,
@@ -171,6 +273,8 @@ pub enum BoardError {
     InvalidArray(String),
     UnknownAlias(String),
     UnknownGpioPin(u32),
+    UnknownMmioAddress(u32),
+    UnsupportedMmioKind(String),
 }
 
 impl fmt::Display for BoardError {
@@ -183,6 +287,8 @@ impl fmt::Display for BoardError {
             BoardError::InvalidArray(value) => write!(f, "invalid array: {value}"),
             BoardError::UnknownAlias(alias) => write!(f, "unknown alias: {alias}"),
             BoardError::UnknownGpioPin(pin) => write!(f, "unknown GPIO pin: {pin}"),
+            BoardError::UnknownMmioAddress(addr) => write!(f, "unknown MMIO address: 0x{addr:08x}"),
+            BoardError::UnsupportedMmioKind(kind) => write!(f, "unsupported MMIO kind: {kind}"),
         }
     }
 }
@@ -483,6 +589,49 @@ mod tests {
                 signal: "led".to_string(),
                 cycles: 3,
             })
+        );
+    }
+
+    #[test]
+    fn generic_gpio_mmio_records_set_and_clear_writes() {
+        let board = parse_board_toml(
+            r#"
+            id = "demo"
+            family = "demo-family"
+            arch = "rv32imc"
+            [memory]
+            ram_base = "0x0"
+            ram_size = "0x100"
+            [gpio]
+            pins = [8]
+            [aliases]
+            led = 8
+            [mmio.gpio]
+            kind = "generic-gpio"
+            base = "0x1000"
+            "#,
+        )
+        .unwrap();
+        let mut bus = MmioBus::for_board(&board).unwrap();
+
+        bus.write32(0x1000 + GenericGpioMmio::SET_OFFSET, 1 << 8)
+            .unwrap();
+        assert_eq!(
+            bus.read32(0x1000 + GenericGpioMmio::READ_OFFSET),
+            Ok(1 << 8)
+        );
+        bus.write32(0x1000 + GenericGpioMmio::CLEAR_OFFSET, 1 << 8)
+            .unwrap();
+        assert_eq!(bus.read32(0x1000 + GenericGpioMmio::READ_OFFSET), Ok(0));
+        assert_eq!(
+            bus.gpio().unwrap().trace(),
+            &[
+                GpioTraceEvent { pin: 8, high: true },
+                GpioTraceEvent {
+                    pin: 8,
+                    high: false
+                },
+            ]
         );
     }
 }

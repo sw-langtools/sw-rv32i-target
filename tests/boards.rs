@@ -1,4 +1,6 @@
-use sw_rv32i_target::{GpioTraceEvent, load_blink_demo_file, load_board_file};
+use sw_rv32i_target::{
+    GenericGpioMmio, GpioTraceEvent, MmioBus, load_blink_demo_file, load_board_file,
+};
 
 #[test]
 fn loads_esp32_c_series_placeholder_boards() {
@@ -47,6 +49,45 @@ fn blink_demo_runs_against_shared_led_alias_on_esp32_c_series() {
                 GpioTraceEvent { pin: 8, high: true },
                 GpioTraceEvent {
                     pin: 8,
+                    high: false,
+                },
+            ]
+        );
+    }
+}
+
+#[test]
+fn blink_like_mmio_writes_toggle_shared_board_led() {
+    for path in [
+        "boards/esp32-c3-devkitm-1.toml",
+        "boards/esp32-c5-devkitc-1.toml",
+        "boards/esp32-c6-devkitc-1.toml",
+    ] {
+        let board = load_board_file(path).unwrap();
+        let gpio_base = board.mmio_base("gpio").unwrap();
+        let led = board.led_gpio().unwrap();
+        let led_mask = 1 << led;
+        let mut bus = MmioBus::for_board(&board).unwrap();
+
+        bus.write32(gpio_base + GenericGpioMmio::SET_OFFSET, led_mask)
+            .unwrap();
+        assert_eq!(
+            bus.read32(gpio_base + GenericGpioMmio::READ_OFFSET),
+            Ok(led_mask)
+        );
+        bus.write32(gpio_base + GenericGpioMmio::CLEAR_OFFSET, led_mask)
+            .unwrap();
+
+        assert_eq!(bus.read32(gpio_base + GenericGpioMmio::READ_OFFSET), Ok(0));
+        assert_eq!(
+            bus.gpio().unwrap().trace(),
+            &[
+                GpioTraceEvent {
+                    pin: led,
+                    high: true,
+                },
+                GpioTraceEvent {
+                    pin: led,
                     high: false,
                 },
             ]
