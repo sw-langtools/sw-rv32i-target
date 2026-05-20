@@ -1,6 +1,6 @@
 number = 1
 slug = "board-toml-schema"
-status = "pending"
+status = "in-progress"
 description = "Scaffold sw-rv32i-target as a Rust crate for board metadata. Add a data-drive..."
 role = "production"
 context_files = []

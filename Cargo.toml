@@ -1,0 +1,8 @@
+[package]
+name = "sw-rv32i-target"
+version = "0.1.0"
+edition = "2024"
+description = "RISC-V board and target metadata for sw-langtools"
+license = "MIT"
+
+[dependencies]

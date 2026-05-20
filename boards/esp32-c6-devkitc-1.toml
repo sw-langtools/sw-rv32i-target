@@ -1,0 +1,17 @@
+id = "esp32-c6-devkitc-1"
+family = "esp32-c6"
+arch = "rv32imac"
+
+[memory]
+ram_base = "0x40800000"
+ram_size = "0x00080000"
+
+[gpio]
+pins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+[aliases]
+led = 8
+
+[mmio.gpio]
+kind = "generic-gpio"
+base = "0x60004000"
