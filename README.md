@@ -63,8 +63,15 @@ The generic GPIO block is intentionally small and not register-accurate:
 This gives emulator-facing code a stable MMIO contract for early blink demos
 without pulling in ESP-IDF or modeling ESP32-specific GPIO registers yet.
 
+## Emulator Integration
+
+`sw-rv32i-emulator` can opt into board MMIO by running through its `Machine`
+wrapper with a target `MmioBus`. Normal memory-only APIs still trap on
+out-of-bounds addresses; the `Machine` path routes word-width load/store
+instructions outside RAM to `MmioBus`, which is enough for early blink-style
+programs to write the generic GPIO set/clear registers and inspect the GPIO
+trace.
+
 ## Next Steps
 
-- Add an emulator integration layer that routes store/load instructions through
-  `MmioBus` when addresses fall outside RAM.
 - Add board-specific register maps where accuracy matters.
