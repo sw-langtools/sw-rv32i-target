@@ -1,0 +1,1 @@
+Added the emulator-side Machine integration that routes word-width load/store operations outside RAM to target MmioBus, with tests proving ESP32-C3 generic GPIO set/read/clear behavior while preserving memory-only APIs.

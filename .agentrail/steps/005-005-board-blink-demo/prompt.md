@@ -1,0 +1,1 @@
+Add a board-aware blink demo path that loads a board TOML file, creates a target MmioBus, runs a small emulator program through Machine to toggle the board's led alias via generic GPIO MMIO set/clear registers, and prints/dumps the GPIO trace. Keep this demo source shared across ESP32-C3/C5/C6 placeholder boards where the led alias resolves to the same pin.

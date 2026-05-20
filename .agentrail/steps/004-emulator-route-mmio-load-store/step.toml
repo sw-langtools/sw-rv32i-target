@@ -1,8 +1,9 @@
 number = 4
 slug = "emulator-route-mmio-load-store"
-status = "in-progress"
+status = "completed"
 description = "Add an emulator integration layer that routes load/store instructions through..."
 role = "legacy"
 context_files = []
 created_at = "2026-05-20T11:02:44"
-commits = []
+completed_at = "2026-05-20T13:57:28"
+commits = ["390153650f2e5b4667f9ac0bbd10c071678af5cc"]
