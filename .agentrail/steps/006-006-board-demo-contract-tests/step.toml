@@ -1,0 +1,8 @@
+number = 6
+slug = "006-board-demo-contract-tests"
+status = "pending"
+description = "Add contract tests around board-aware demos so future board TOML files can op..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T14:36:49"
+commits = []

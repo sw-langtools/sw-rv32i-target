@@ -1,0 +1,1 @@
+Add contract tests around board-aware demos so future board TOML files can opt into shared demos safely. Cover that every board with a led alias and generic-gpio MMIO can run the shared blink program, that unsupported/missing aliases fail with clear errors, and that custom board paths remain supported by the demo path.

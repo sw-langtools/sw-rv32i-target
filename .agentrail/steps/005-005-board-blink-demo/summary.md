@@ -1,0 +1,1 @@
+Added a board-aware blink demo that loads ESP32-C3/C5/C6 board TOML, resolves the led alias, runs a shared emulator Machine program through generic GPIO MMIO, and prints the set/read/clear trace.
