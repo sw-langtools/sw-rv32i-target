@@ -1,8 +1,9 @@
 number = 3
 slug = "emulator-mmio-gpio-bus"
-status = "in-progress"
+status = "completed"
 description = "Connect the generic GPIO target model to emulator-facing MMIO. Define a small..."
 role = "legacy"
 context_files = []
 created_at = "2026-05-20T10:59:19"
-commits = []
+completed_at = "2026-05-20T11:02:44"
+commits = ["2edb357ab4afc3e8cb6c62e0ea03de1e233e149b"]

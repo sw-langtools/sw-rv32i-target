@@ -1,0 +1,1 @@
+Added a generic GPIO MMIO bus/device model that uses board TOML base addresses and records blink-like LED pin transitions through MMIO writes.

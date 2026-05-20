@@ -1,0 +1,1 @@
+Add an emulator integration layer that routes load/store instructions through a target MmioBus when addresses fall outside RAM. Use sw-rv32i-target generic-gpio MMIO to run a small blink-like program that writes the board led mask to set/clear offsets and assert the GPIO trace. Keep existing memory-only APIs working; add opt-in APIs or a wrapper so current demos remain stable.
