@@ -1,0 +1,1 @@
+Added a generic GPIO state/trace model plus a blink demo manifest that resolves logical aliases such as led across ESP32-C3/C5/C6 board files.
