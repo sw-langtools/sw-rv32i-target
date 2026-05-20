@@ -1,0 +1,1 @@
+Added assembler MMIO ergonomics with li pseudo-instruction expansion and sw support, then changed board_uart_hello to assemble shared source with profile validation from board TOML for ESP32-C3 and CH32V003/RV32E.

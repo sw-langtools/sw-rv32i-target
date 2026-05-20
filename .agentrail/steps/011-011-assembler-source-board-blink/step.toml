@@ -1,0 +1,8 @@
+number = 11
+slug = "011-assembler-source-board-blink"
+status = "pending"
+description = "Move board_blink from Rust ISA-helper construction to assembler source now th..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T16:56:14"
+commits = []

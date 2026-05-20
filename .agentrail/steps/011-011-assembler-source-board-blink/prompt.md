@@ -1,0 +1,1 @@
+Move board_blink from Rust ISA-helper construction to assembler source now that li and sw are available. Add source generation or fixture .s for generic GPIO set/read/clear, assemble it with profile derived from board TOML, preserve ESP32-C3 and CH32V003/RV32E runnable demos, and update help/docs.
