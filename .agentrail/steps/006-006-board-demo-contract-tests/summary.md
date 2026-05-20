@@ -1,0 +1,1 @@
+Added board demo contract coverage: generic GPIO LED bindings now validate led alias, declared GPIO pin, generic-gpio MMIO, and 32-bit mask fit; tests cover ESP32-C-series compatibility and clear failure errors, with an emulator CLI test for custom board paths.

@@ -1,0 +1,8 @@
+number = 7
+slug = "007-board-uart-mmio-plan"
+status = "pending"
+description = "Plan and add the first UART-capable board demo contract. Extend board TOML/MM..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T14:55:33"
+commits = []

@@ -1,0 +1,1 @@
+Plan and add the first UART-capable board demo contract. Extend board TOML/MMIO metadata enough to declare a generic UART device separately from GPIO, define the minimal emulator-facing UART MMIO behavior needed for hello-style output, and document how this differs from ESP32 register-accurate UART support.
