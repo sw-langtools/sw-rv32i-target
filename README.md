@@ -119,5 +119,4 @@ out of the shared demo path.
 ## Next Steps
 
 - Add board-specific register maps where accuracy matters.
-- Add assembler-source board blink once full 32-bit address loading is ergonomic.
-- Add assembler-source UART hello once full 32-bit address loading is ergonomic.
+- Add assembler-source board blink now that full 32-bit address loading is available.

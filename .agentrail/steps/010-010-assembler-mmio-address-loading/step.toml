@@ -1,6 +1,6 @@
 number = 10
 slug = "010-assembler-mmio-address-loading"
-status = "pending"
+status = "in-progress"
 description = "Add assembler ergonomics for MMIO-targeted board demos. Support enough source..."
 role = "legacy"
 context_files = []
