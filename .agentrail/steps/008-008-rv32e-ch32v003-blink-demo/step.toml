@@ -1,8 +1,9 @@
 number = 8
 slug = "008-rv32e-ch32v003-blink-demo"
-status = "in-progress"
+status = "completed"
 description = "Add an RV32E board blink path using a CH32V003-style board TOML. Create a CH3..."
 role = "legacy"
 context_files = []
 created_at = "2026-05-20T15:04:20"
-commits = []
+completed_at = "2026-05-20T15:15:18"
+commits = ["bc56372ca5f747cf74f456819532b9f9adff57b8"]

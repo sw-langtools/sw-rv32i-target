@@ -1,0 +1,8 @@
+number = 9
+slug = "009-board-uart-hello-example"
+status = "pending"
+description = "Add a runnable Rust example for board UART text output. The example should lo..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T15:15:18"
+commits = []

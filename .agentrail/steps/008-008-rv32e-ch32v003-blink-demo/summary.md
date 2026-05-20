@@ -1,0 +1,1 @@
+Added an RV32E CH32V003-style board placeholder and made the board_blink example run both ESP32-C3 and CH32V003/RV32E blink demos with profiles derived from board TOML. Added a cargo run --example help guide covering profiles, targets, LED, UART/text, and I2C/display status.
