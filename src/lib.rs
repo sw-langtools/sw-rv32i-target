@@ -48,12 +48,129 @@ pub struct MmioDevice {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GpioState {
+    pins: BTreeMap<u32, bool>,
+    trace: Vec<GpioTraceEvent>,
+}
+
+impl GpioState {
+    pub fn for_board(board: &Board) -> Self {
+        let pins = board
+            .gpio
+            .pins
+            .iter()
+            .copied()
+            .map(|pin| (pin, false))
+            .collect();
+        Self {
+            pins,
+            trace: Vec::new(),
+        }
+    }
+
+    pub fn write_pin(&mut self, pin: u32, high: bool) -> Result<(), BoardError> {
+        let state = self
+            .pins
+            .get_mut(&pin)
+            .ok_or(BoardError::UnknownGpioPin(pin))?;
+        *state = high;
+        self.trace.push(GpioTraceEvent { pin, high });
+        Ok(())
+    }
+
+    pub fn write_alias(
+        &mut self,
+        board: &Board,
+        alias: &str,
+        high: bool,
+    ) -> Result<(), BoardError> {
+        let pin = board
+            .alias_gpio(alias)
+            .ok_or_else(|| BoardError::UnknownAlias(alias.to_string()))?;
+        self.write_pin(pin, high)
+    }
+
+    pub fn read_pin(&self, pin: u32) -> Result<bool, BoardError> {
+        self.pins
+            .get(&pin)
+            .copied()
+            .ok_or(BoardError::UnknownGpioPin(pin))
+    }
+
+    pub fn trace(&self) -> &[GpioTraceEvent] {
+        &self.trace
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct GpioTraceEvent {
+    pub pin: u32,
+    pub high: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BlinkDemo {
+    pub id: String,
+    pub signal: String,
+    pub cycles: u32,
+}
+
+impl BlinkDemo {
+    pub fn run(&self, board: &Board) -> Result<GpioState, BoardError> {
+        let mut gpio = GpioState::for_board(board);
+        for _ in 0..self.cycles {
+            gpio.write_alias(board, &self.signal, true)?;
+            gpio.write_alias(board, &self.signal, false)?;
+        }
+        Ok(gpio)
+    }
+}
+
+pub fn load_blink_demo_file(path: impl AsRef<Path>) -> Result<BlinkDemo, BoardError> {
+    let text = fs::read_to_string(path).map_err(|err| BoardError::Io(err.to_string()))?;
+    parse_blink_demo_toml(&text)
+}
+
+pub fn parse_blink_demo_toml(text: &str) -> Result<BlinkDemo, BoardError> {
+    let mut id = None;
+    let mut signal = None;
+    let mut cycles = None;
+    for (index, raw_line) in text.lines().enumerate() {
+        let line_no = index + 1;
+        let line = strip_comment(raw_line).trim();
+        if line.is_empty() {
+            continue;
+        }
+        let (key, value) = line
+            .split_once('=')
+            .ok_or_else(|| BoardError::Parse(format!("line {line_no}: expected key = value")))?;
+        match key.trim() {
+            "id" => id = Some(parse_string(value.trim(), line_no)?),
+            "signal" => signal = Some(parse_string(value.trim(), line_no)?),
+            "cycles" => cycles = Some(parse_number(value.trim())?),
+            other => {
+                return Err(BoardError::Parse(format!(
+                    "line {line_no}: unknown blink key {other}"
+                )));
+            }
+        }
+    }
+    Ok(BlinkDemo {
+        id: id.ok_or_else(|| BoardError::MissingField("id".to_string()))?,
+        signal: signal.ok_or_else(|| BoardError::MissingField("signal".to_string()))?,
+        cycles: cycles.ok_or_else(|| BoardError::MissingField("cycles".to_string()))?,
+    })
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BoardError {
     Io(String),
     Parse(String),
     MissingField(String),
     InvalidNumber(String),
     InvalidArray(String),
+    UnknownAlias(String),
+    UnknownGpioPin(u32),
 }
 
 impl fmt::Display for BoardError {
@@ -64,6 +181,8 @@ impl fmt::Display for BoardError {
             BoardError::MissingField(field) => write!(f, "missing field: {field}"),
             BoardError::InvalidNumber(value) => write!(f, "invalid number: {value}"),
             BoardError::InvalidArray(value) => write!(f, "invalid array: {value}"),
+            BoardError::UnknownAlias(alias) => write!(f, "unknown alias: {alias}"),
+            BoardError::UnknownGpioPin(pin) => write!(f, "unknown GPIO pin: {pin}"),
         }
     }
 }
@@ -304,6 +423,66 @@ mod tests {
         assert_eq!(
             parse_board_toml("id = \"demo\"").unwrap_err(),
             BoardError::MissingField("family".to_string())
+        );
+    }
+
+    #[test]
+    fn gpio_state_toggles_aliases_and_records_trace() {
+        let board = parse_board_toml(
+            r#"
+            id = "demo"
+            family = "demo-family"
+            arch = "rv32imc"
+            [memory]
+            ram_base = "0x0"
+            ram_size = "0x100"
+            [gpio]
+            pins = [8]
+            [aliases]
+            led = 8
+            "#,
+        )
+        .unwrap();
+        let demo = BlinkDemo {
+            id: "blink".to_string(),
+            signal: "led".to_string(),
+            cycles: 2,
+        };
+
+        let gpio = demo.run(&board).unwrap();
+        assert_eq!(gpio.read_pin(8), Ok(false));
+        assert_eq!(
+            gpio.trace(),
+            &[
+                GpioTraceEvent { pin: 8, high: true },
+                GpioTraceEvent {
+                    pin: 8,
+                    high: false
+                },
+                GpioTraceEvent { pin: 8, high: true },
+                GpioTraceEvent {
+                    pin: 8,
+                    high: false
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn blink_demo_toml_parses_logical_signal() {
+        assert_eq!(
+            parse_blink_demo_toml(
+                r#"
+                id = "blink"
+                signal = "led"
+                cycles = 3
+                "#
+            ),
+            Ok(BlinkDemo {
+                id: "blink".to_string(),
+                signal: "led".to_string(),
+                cycles: 3,
+            })
         );
     }
 }

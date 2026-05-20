@@ -1,6 +1,6 @@
 number = 2
 slug = "gpio-mmio-blink-model"
-status = "pending"
+status = "in-progress"
 description = "Add a generic GPIO MMIO model and blink demo metadata. Define a simple GPIO s..."
 role = "legacy"
 context_files = []

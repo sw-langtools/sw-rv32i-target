@@ -36,8 +36,22 @@ The first board files are placeholders for ESP32-C3, ESP32-C5, and ESP32-C6
 development boards. They intentionally use a generic GPIO MMIO kind until a
 register-accurate device model is added.
 
+## Blink Demos
+
+Reusable demos live in `demos/*.toml` and bind to logical board signals:
+
+```toml
+id = "blink"
+signal = "led"
+cycles = 3
+```
+
+`BlinkDemo::run` resolves `signal = "led"` through the selected board's
+`[aliases]` table and records a deterministic GPIO trace. For the initial
+ESP32-C3/C5/C6 placeholders, all three boards map `led = 8`, so the same blink
+demo produces the same GPIO8 high/low trace for each board.
+
 ## Next Steps
 
-- Add a generic GPIO MMIO device model and trace of pin transitions.
-- Add a `blink` demo manifest bound to the `led` alias.
+- Connect the generic GPIO trace model to an emulator MMIO bus.
 - Add board-specific register maps where accuracy matters.

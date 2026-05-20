@@ -1,0 +1,3 @@
+id = "blink"
+signal = "led"
+cycles = 3
