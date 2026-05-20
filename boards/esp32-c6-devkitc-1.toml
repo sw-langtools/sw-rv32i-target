@@ -15,3 +15,7 @@ led = 8
 [mmio.gpio]
 kind = "generic-gpio"
 base = "0x60004000"
+
+[mmio.uart0]
+kind = "generic-uart"
+base = "0x60000000"

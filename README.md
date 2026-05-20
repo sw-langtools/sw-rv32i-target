@@ -25,6 +25,10 @@ led = 8
 [mmio.gpio]
 kind = "generic-gpio"
 base = "0x60004000"
+
+[mmio.uart0]
+kind = "generic-uart"
+base = "0x60000000"
 ```
 
 Blink demos should bind to logical aliases such as `led`, not directly to a
@@ -63,6 +67,25 @@ The generic GPIO block is intentionally small and not register-accurate:
 This gives emulator-facing code a stable MMIO contract for early blink demos
 without pulling in ESP-IDF or modeling ESP32-specific GPIO registers yet.
 
+## Generic UART MMIO
+
+Boards can declare a generic UART separately from GPIO:
+
+```toml
+[mmio.uart0]
+kind = "generic-uart"
+base = "0x60000000"
+```
+
+The generic UART block is intentionally small and not register-accurate:
+
+- `base + 0x00`: write low byte to TX output
+- `base + 0x04`: read status; bit 0 means TX ready
+
+This gives emulator-facing code a stable hello-style output contract. It is not
+an ESP32 UART model yet: real ESP32-C3 UART support needs the actual register
+map, FIFO/status behavior, clock/reset setup, and loader/runtime conventions.
+
 ## Emulator Integration
 
 `sw-rv32i-emulator` can opt into board MMIO by running through its `Machine`
@@ -89,4 +112,4 @@ out of the shared demo path.
 ## Next Steps
 
 - Add board-specific register maps where accuracy matters.
-- Add board display and UART demo bindings after GPIO blink is stable.
+- Add a UART-backed emulator hello demo that writes through board TOML MMIO.

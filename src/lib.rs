@@ -142,25 +142,39 @@ impl GpioState {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MmioBus {
     gpio: Option<GenericGpioMmio>,
+    uarts: BTreeMap<String, GenericUartMmio>,
 }
 
 impl MmioBus {
     pub fn for_board(board: &Board) -> Result<Self, BoardError> {
-        let gpio = match board.mmio.get("gpio") {
-            Some(device) if device.kind == "generic-gpio" => Some(GenericGpioMmio::new(
-                device.base,
-                GpioState::for_board(board),
-            )),
-            Some(device) => return Err(BoardError::UnsupportedMmioKind(device.kind.clone())),
-            None => None,
-        };
-        Ok(Self { gpio })
+        let mut gpio = None;
+        let mut uarts = BTreeMap::new();
+        for (name, device) in &board.mmio {
+            match (name.as_str(), device.kind.as_str()) {
+                ("gpio", "generic-gpio") => {
+                    gpio = Some(GenericGpioMmio::new(
+                        device.base,
+                        GpioState::for_board(board),
+                    ));
+                }
+                (_, "generic-uart") => {
+                    uarts.insert(name.clone(), GenericUartMmio::new(device.base));
+                }
+                (_, other) => return Err(BoardError::UnsupportedMmioKind(other.to_string())),
+            }
+        }
+        Ok(Self { gpio, uarts })
     }
 
     pub fn write32(&mut self, addr: u32, value: u32) -> Result<(), BoardError> {
         if let Some(gpio) = &mut self.gpio {
             if gpio.contains(addr) {
                 return gpio.write32(addr, value);
+            }
+        }
+        for uart in self.uarts.values_mut() {
+            if uart.contains(addr) {
+                return uart.write32(addr, value);
             }
         }
         Err(BoardError::UnknownMmioAddress(addr))
@@ -172,11 +186,27 @@ impl MmioBus {
                 return gpio.read32(addr);
             }
         }
+        for uart in self.uarts.values() {
+            if uart.contains(addr) {
+                return uart.read32(addr);
+            }
+        }
         Err(BoardError::UnknownMmioAddress(addr))
     }
 
     pub fn gpio(&self) -> Option<&GpioState> {
         self.gpio.as_ref().map(GenericGpioMmio::state)
+    }
+
+    pub fn uart_output(&self, name: &str) -> Option<&[u8]> {
+        self.uarts.get(name).map(GenericUartMmio::output)
+    }
+
+    pub fn uart_output_string(&self, name: &str) -> Result<String, BoardError> {
+        let output = self
+            .uart_output(name)
+            .ok_or_else(|| BoardError::MissingMmioDevice(name.to_string()))?;
+        String::from_utf8(output.to_vec()).map_err(|err| BoardError::InvalidUtf8(err.to_string()))
     }
 }
 
@@ -234,6 +264,51 @@ impl GenericGpioMmio {
             }
         }
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GenericUartMmio {
+    base: u32,
+    output: Vec<u8>,
+}
+
+impl GenericUartMmio {
+    pub const TXDATA_OFFSET: u32 = 0x00;
+    pub const STATUS_OFFSET: u32 = 0x04;
+    pub const SIZE: u32 = 0x08;
+    pub const STATUS_TX_READY: u32 = 1;
+
+    pub fn new(base: u32) -> Self {
+        Self {
+            base,
+            output: Vec::new(),
+        }
+    }
+
+    pub fn contains(&self, addr: u32) -> bool {
+        addr >= self.base && addr < self.base + Self::SIZE
+    }
+
+    pub fn output(&self) -> &[u8] {
+        &self.output
+    }
+
+    pub fn write32(&mut self, addr: u32, value: u32) -> Result<(), BoardError> {
+        match addr.checked_sub(self.base) {
+            Some(Self::TXDATA_OFFSET) => {
+                self.output.push(value as u8);
+                Ok(())
+            }
+            _ => Err(BoardError::UnknownMmioAddress(addr)),
+        }
+    }
+
+    pub fn read32(&self, addr: u32) -> Result<u32, BoardError> {
+        match addr.checked_sub(self.base) {
+            Some(Self::STATUS_OFFSET) => Ok(Self::STATUS_TX_READY),
+            _ => Err(BoardError::UnknownMmioAddress(addr)),
+        }
     }
 }
 
@@ -310,6 +385,7 @@ pub enum BoardError {
     UnknownMmioAddress(u32),
     UnsupportedMmioKind(String),
     GpioMaskOutOfRange(u32),
+    InvalidUtf8(String),
 }
 
 impl fmt::Display for BoardError {
@@ -328,6 +404,7 @@ impl fmt::Display for BoardError {
             BoardError::GpioMaskOutOfRange(pin) => {
                 write!(f, "GPIO pin cannot fit in 32-bit mask: {pin}")
             }
+            BoardError::InvalidUtf8(message) => write!(f, "invalid UTF-8 output: {message}"),
         }
     }
 }
@@ -551,6 +628,10 @@ mod tests {
             [mmio.gpio]
             kind = "generic-gpio"
             base = "0x60004000"
+
+            [mmio.uart0]
+            kind = "generic-uart"
+            base = "0x60000000"
             "#,
         )
         .unwrap();
@@ -561,6 +642,7 @@ mod tests {
         assert_eq!(board.led_gpio(), Some(8));
         assert!(board.supports_gpio(8));
         assert_eq!(board.mmio["gpio"].kind, "generic-gpio");
+        assert_eq!(board.mmio["uart0"].kind, "generic-uart");
     }
 
     #[test]
@@ -672,5 +754,40 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn generic_uart_mmio_records_tx_bytes_and_reports_ready_status() {
+        let board = parse_board_toml(
+            r#"
+            id = "demo"
+            family = "demo-family"
+            arch = "rv32imc"
+            [memory]
+            ram_base = "0x0"
+            ram_size = "0x100"
+            [gpio]
+            pins = [8]
+            [aliases]
+            led = 8
+            [mmio.uart0]
+            kind = "generic-uart"
+            base = "0x2000"
+            "#,
+        )
+        .unwrap();
+        let mut bus = MmioBus::for_board(&board).unwrap();
+
+        assert_eq!(
+            bus.read32(0x2000 + GenericUartMmio::STATUS_OFFSET),
+            Ok(GenericUartMmio::STATUS_TX_READY)
+        );
+        bus.write32(0x2000 + GenericUartMmio::TXDATA_OFFSET, b'h' as u32)
+            .unwrap();
+        bus.write32(0x2000 + GenericUartMmio::TXDATA_OFFSET, b'i' as u32)
+            .unwrap();
+
+        assert_eq!(bus.uart_output("uart0"), Some(&b"hi"[..]));
+        assert_eq!(bus.uart_output_string("uart0"), Ok("hi".to_string()));
     }
 }

@@ -1,6 +1,6 @@
 number = 7
 slug = "007-board-uart-mmio-plan"
-status = "pending"
+status = "in-progress"
 description = "Plan and add the first UART-capable board demo contract. Extend board TOML/MM..."
 role = "legacy"
 context_files = []
