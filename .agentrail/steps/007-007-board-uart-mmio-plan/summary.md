@@ -1,0 +1,1 @@
+Added generic UART MMIO metadata and contract support: ESP32-C-series board TOML now declares uart0, MmioBus supports generic-uart TX output/status, target tests cover hello-style output and errors, and emulator tests prove store instructions route through UART MMIO.

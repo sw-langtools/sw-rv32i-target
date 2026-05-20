@@ -1,8 +1,9 @@
 number = 7
 slug = "007-board-uart-mmio-plan"
-status = "in-progress"
+status = "completed"
 description = "Plan and add the first UART-capable board demo contract. Extend board TOML/MM..."
 role = "legacy"
 context_files = []
 created_at = "2026-05-20T14:55:33"
-commits = []
+completed_at = "2026-05-20T15:04:20"
+commits = ["34a474fa6986e7bfcc2bf3bf6ba44481d63a5084"]
