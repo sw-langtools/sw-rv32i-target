@@ -1,6 +1,6 @@
 number = 5
 slug = "005-board-blink-demo"
-status = "pending"
+status = "in-progress"
 description = "Add a board-aware blink demo path that loads a board TOML file, creates a tar..."
 role = "legacy"
 context_files = []

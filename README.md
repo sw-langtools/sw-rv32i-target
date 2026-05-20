@@ -72,6 +72,15 @@ instructions outside RAM to `MmioBus`, which is enough for early blink-style
 programs to write the generic GPIO set/clear registers and inspect the GPIO
 trace.
 
+The emulator's `board_blink` example loads the ESP32-C3/C5/C6 placeholder board
+files, resolves each board's `led` alias, runs one shared blink program through
+`Machine`, and prints the resulting GPIO trace:
+
+```bash
+cargo run --example board_blink
+```
+
 ## Next Steps
 
 - Add board-specific register maps where accuracy matters.
+- Add board display and UART demo bindings after GPIO blink is stable.
