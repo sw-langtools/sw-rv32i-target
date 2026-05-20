@@ -1,0 +1,8 @@
+number = 2
+slug = "gpio-mmio-blink-model"
+status = "pending"
+description = "Add a generic GPIO MMIO model and blink demo metadata. Define a simple GPIO s..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T10:23:48"
+commits = []

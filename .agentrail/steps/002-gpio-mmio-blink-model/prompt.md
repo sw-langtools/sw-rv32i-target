@@ -1,0 +1,1 @@
+Add a generic GPIO MMIO model and blink demo metadata. Define a simple GPIO state/trace type that can toggle pins by logical alias from a loaded Board, add a blink demo manifest bound to the led alias, and add tests proving the same blink demo can run against ESP32-C3/C5/C6 board files when they share led = 8. Keep this generic and independent of ESP-IDF or vendor SDKs.

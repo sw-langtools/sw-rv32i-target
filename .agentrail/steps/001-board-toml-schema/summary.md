@@ -1,0 +1,1 @@
+Scaffolded sw-rv32i-target with a board TOML schema, parser, ESP32-C3/C5/C6 placeholder board files, and tests for shared LED GPIO aliases.
