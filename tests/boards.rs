@@ -9,6 +9,13 @@ const ESP32_C_SERIES_BOARDS: &[&str] = &[
     "boards/esp32-c6-devkitc-1.toml",
 ];
 
+const SHARED_BLINK_BOARDS: &[&str] = &[
+    "boards/esp32-c3-devkitm-1.toml",
+    "boards/esp32-c5-devkitc-1.toml",
+    "boards/esp32-c6-devkitc-1.toml",
+    "boards/ch32v003f4p6-evt.toml",
+];
+
 #[test]
 fn loads_esp32_c_series_placeholder_boards() {
     for path in ESP32_C_SERIES_BOARDS {
@@ -20,6 +27,21 @@ fn loads_esp32_c_series_placeholder_boards() {
         assert_eq!(board.mmio["gpio"].kind, "generic-gpio");
         assert_eq!(board.mmio["uart0"].kind, "generic-uart");
     }
+}
+
+#[test]
+fn loads_ch32v003_rv32e_placeholder_board() {
+    let board = load_board_file("boards/ch32v003f4p6-evt.toml").unwrap();
+
+    assert_eq!(board.id, "ch32v003f4p6-evt");
+    assert_eq!(board.family, "ch32v003");
+    assert_eq!(board.arch, "rv32ec");
+    assert_eq!(board.memory.ram_base, 0x2000_0000);
+    assert_eq!(board.memory.ram_size, 0x0000_0800);
+    assert_eq!(board.led_gpio(), Some(1));
+    assert!(board.supports_gpio(1));
+    assert_eq!(board.mmio["gpio"].kind, "generic-gpio");
+    assert_eq!(board.mmio["uart0"].kind, "generic-uart");
 }
 
 #[test]
@@ -58,7 +80,7 @@ fn blink_demo_runs_against_shared_led_alias_on_esp32_c_series() {
 
 #[test]
 fn blink_like_mmio_writes_toggle_shared_board_led() {
-    for path in ESP32_C_SERIES_BOARDS {
+    for path in SHARED_BLINK_BOARDS {
         let board = load_board_file(path).unwrap();
         let binding = generic_gpio_led_blink_binding(&board).unwrap();
         let mut bus = MmioBus::for_board(&board).unwrap();
@@ -100,13 +122,12 @@ fn blink_like_mmio_writes_toggle_shared_board_led() {
 
 #[test]
 fn every_generic_gpio_led_board_can_bind_shared_blink_contract() {
-    for path in ESP32_C_SERIES_BOARDS {
+    for path in SHARED_BLINK_BOARDS {
         let board = load_board_file(path).unwrap();
         let binding = generic_gpio_led_blink_binding(&board).unwrap();
 
-        assert_eq!(binding.led_pin, 8);
-        assert_eq!(binding.led_mask, 0x0000_0100);
-        assert_eq!(binding.gpio_base, 0x6000_4000);
+        assert_eq!(binding.led_mask, 1 << binding.led_pin);
+        assert_eq!(binding.gpio_base, board.mmio_base("gpio").unwrap());
         assert!(board.supports_gpio(binding.led_pin));
     }
 }

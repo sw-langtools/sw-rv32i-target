@@ -1,0 +1,21 @@
+id = "ch32v003f4p6-evt"
+family = "ch32v003"
+arch = "rv32ec"
+
+[memory]
+ram_base = "0x20000000"
+ram_size = "0x00000800"
+
+[gpio]
+pins = [0, 1, 2, 3, 4, 5, 6, 7]
+
+[aliases]
+led = 1
+
+[mmio.gpio]
+kind = "generic-gpio"
+base = "0x40011000"
+
+[mmio.uart0]
+kind = "generic-uart"
+base = "0x40013800"

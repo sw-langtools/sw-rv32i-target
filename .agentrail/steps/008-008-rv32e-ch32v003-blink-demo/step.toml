@@ -1,6 +1,6 @@
 number = 8
 slug = "008-rv32e-ch32v003-blink-demo"
-status = "pending"
+status = "in-progress"
 description = "Add an RV32E board blink path using a CH32V003-style board TOML. Create a CH3..."
 role = "legacy"
 context_files = []

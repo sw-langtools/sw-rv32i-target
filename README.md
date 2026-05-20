@@ -40,6 +40,12 @@ The first board files are placeholders for ESP32-C3, ESP32-C5, and ESP32-C6
 development boards. They intentionally use a generic GPIO MMIO kind until a
 register-accurate device model is added.
 
+The CH32V003 placeholder uses `arch = "rv32ec"` so board-driven demos exercise
+the RV32E profile. Its `led` alias is modeled as a flat generic GPIO pin for the
+shared emulator blink contract; real CH32V003 board variants use port/pin names
+such as GPIOC pin 1 or a board LED connected through jumpers, which will need a
+more specific pin model later.
+
 ## Blink Demos
 
 Reusable demos live in `demos/*.toml` and bind to logical board signals:
@@ -96,8 +102,9 @@ programs to write the generic GPIO set/clear registers and inspect the GPIO
 trace.
 
 The emulator's `board_blink` example loads the ESP32-C3/C5/C6 placeholder board
-files, resolves each board's `led` alias, runs one shared blink program through
-`Machine`, and prints the resulting GPIO trace:
+files plus the CH32V003 RV32E placeholder, resolves each board's `led` alias,
+runs one shared blink program through `Machine`, and prints the resulting GPIO
+trace:
 
 ```bash
 cargo run --example board_blink
@@ -113,3 +120,4 @@ out of the shared demo path.
 
 - Add board-specific register maps where accuracy matters.
 - Add a UART-backed emulator hello demo that writes through board TOML MMIO.
+- Add assembler-source board blink once full 32-bit address loading is ergonomic.
