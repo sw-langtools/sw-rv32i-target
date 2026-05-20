@@ -1,0 +1,1 @@
+Added a runnable board_uart_hello Rust example that loads board TOML, derives the profile from arch, writes hello through uart0 generic-uart MMIO via emulator Machine, and prints captured UART output for ESP32-C3 and CH32V003/RV32E.

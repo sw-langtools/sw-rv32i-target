@@ -1,0 +1,1 @@
+Add assembler ergonomics for MMIO-targeted board demos. Support enough source syntax to load full 32-bit constants or labels for MMIO addresses, such as li/la pseudo-ops or documented lui/addi expansion, then add assembler-source examples for board_blink or board_uart_hello with profile validation from board TOML.

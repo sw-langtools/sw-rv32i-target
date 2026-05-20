@@ -1,0 +1,8 @@
+number = 10
+slug = "010-assembler-mmio-address-loading"
+status = "pending"
+description = "Add assembler ergonomics for MMIO-targeted board demos. Support enough source..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T15:21:09"
+commits = []
