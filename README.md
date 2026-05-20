@@ -80,6 +80,12 @@ files, resolves each board's `led` alias, runs one shared blink program through
 cargo run --example board_blink
 ```
 
+Boards opt into that shared demo when `generic_gpio_led_blink_binding` can
+resolve a `led` alias, a `generic-gpio` MMIO device named `gpio`, and a GPIO pin
+that fits the current 32-bit mask model. Contract tests cover these requirements
+so future board TOML files fail with specific errors instead of silently falling
+out of the shared demo path.
+
 ## Next Steps
 
 - Add board-specific register maps where accuracy matters.

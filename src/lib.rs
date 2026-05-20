@@ -34,6 +34,39 @@ impl Board {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct GenericGpioBlinkBinding {
+    pub gpio_base: u32,
+    pub led_pin: u32,
+    pub led_mask: u32,
+}
+
+pub fn generic_gpio_led_blink_binding(
+    board: &Board,
+) -> Result<GenericGpioBlinkBinding, BoardError> {
+    let led_pin = board
+        .led_gpio()
+        .ok_or_else(|| BoardError::UnknownAlias("led".to_string()))?;
+    let led_mask = 1u32
+        .checked_shl(led_pin)
+        .ok_or(BoardError::GpioMaskOutOfRange(led_pin))?;
+    if !board.supports_gpio(led_pin) {
+        return Err(BoardError::UnknownGpioPin(led_pin));
+    }
+    let gpio = board
+        .mmio
+        .get("gpio")
+        .ok_or_else(|| BoardError::MissingMmioDevice("gpio".to_string()))?;
+    if gpio.kind != "generic-gpio" {
+        return Err(BoardError::UnsupportedMmioKind(gpio.kind.clone()));
+    }
+    Ok(GenericGpioBlinkBinding {
+        gpio_base: gpio.base,
+        led_pin,
+        led_mask,
+    })
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MemoryMap {
     pub ram_base: u32,
@@ -273,8 +306,10 @@ pub enum BoardError {
     InvalidArray(String),
     UnknownAlias(String),
     UnknownGpioPin(u32),
+    MissingMmioDevice(String),
     UnknownMmioAddress(u32),
     UnsupportedMmioKind(String),
+    GpioMaskOutOfRange(u32),
 }
 
 impl fmt::Display for BoardError {
@@ -287,8 +322,12 @@ impl fmt::Display for BoardError {
             BoardError::InvalidArray(value) => write!(f, "invalid array: {value}"),
             BoardError::UnknownAlias(alias) => write!(f, "unknown alias: {alias}"),
             BoardError::UnknownGpioPin(pin) => write!(f, "unknown GPIO pin: {pin}"),
+            BoardError::MissingMmioDevice(name) => write!(f, "missing MMIO device: {name}"),
             BoardError::UnknownMmioAddress(addr) => write!(f, "unknown MMIO address: 0x{addr:08x}"),
             BoardError::UnsupportedMmioKind(kind) => write!(f, "unsupported MMIO kind: {kind}"),
+            BoardError::GpioMaskOutOfRange(pin) => {
+                write!(f, "GPIO pin cannot fit in 32-bit mask: {pin}")
+            }
         }
     }
 }
