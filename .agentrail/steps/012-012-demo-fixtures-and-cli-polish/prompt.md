@@ -1,0 +1,1 @@
+Polish board demo source handling. Move generated inline assembler for board_blink and board_uart_hello toward reusable .s fixtures or templates, reduce duplication between examples, and improve help output so users can quickly discover target-specific commands and current generic-vs-register-accurate limitations.

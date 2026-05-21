@@ -1,0 +1,8 @@
+number = 12
+slug = "012-demo-fixtures-and-cli-polish"
+status = "pending"
+description = "Polish board demo source handling. Move generated inline assembler for board_..."
+role = "legacy"
+context_files = []
+created_at = "2026-05-20T17:54:43"
+commits = []

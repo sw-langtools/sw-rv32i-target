@@ -1,0 +1,1 @@
+Moved board_blink to assembler-generated source with li/sw/lw MMIO syntax and profile validation from board TOML, preserving ESP32-C3 and CH32V003/RV32E demos. Added assembler lw support for the GPIO read-back step.
