@@ -1,6 +1,6 @@
 number = 11
 slug = "011-assembler-source-board-blink"
-status = "pending"
+status = "in-progress"
 description = "Move board_blink from Rust ISA-helper construction to assembler source now th..."
 role = "legacy"
 context_files = []
